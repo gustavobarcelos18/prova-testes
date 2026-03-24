@@ -17,7 +17,7 @@ interface IFilme {
     id: number
     titulo: string
     eh3D: boolean
-    classificacao: number  // 0 = livre, 10, 12, 14, 16, 18
+    classificacao: number
 }
 
 interface IEspectador {
@@ -29,7 +29,7 @@ interface IEspectador {
 interface ICompraIngresso {
     filmeId: number
     sessao: 'manha' | 'tarde' | 'noite'
-    diaSemana: number  // 0 = domingo, 1 = segunda, ..., 6 = sábado
+    diaSemana: number
     espectadores: IEspectador[]
 }
 
@@ -52,22 +52,75 @@ const filmes: IFilme[] = [
 // ==================== FUNÇÃO A IMPLEMENTAR ====================
 
 function comprarIngressos(compra: ICompraIngresso): IResultadoCompra {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Buscar o filme pelo filmeId
-    // 2. Validar: máximo 6 espectadores, menores de 16 na sessão noite, classificação indicativa
-    // 3. Para cada espectador, calcular o valor do ingresso:
-    //    a. Valor base = R$ 40,00
-    //    b. Se terça-feira (diaSemana === 2): valor base *= 0.70 (30% desconto)
-    //    c. Se meia-entrada (estudante ou idade >= 60): valor *= 0.50
-    //    d. Se sessão 3D: valor += R$ 10,00
-    // 4. Somar todos os ingressos
+    let filmeEncontrado: IFilme | undefined = undefined
+
+    for (let i = 0; i < filmes.length; i++) {
+        if (filmes[i].id === compra.filmeId) {
+            filmeEncontrado = filmes[i]
+        }
+    }
+
+    if (filmeEncontrado === undefined) {
+        return {
+            valorTotal: 0,
+            quantidadeIngressos: 0,
+            ehValida: false
+        }
+    }
+
+    if (compra.espectadores.length > 6) {
+        return {
+            valorTotal: 0,
+            quantidadeIngressos: compra.espectadores.length,
+            ehValida: false
+        }
+    }
+
+    for (let i = 0; i < compra.espectadores.length; i++) {
+        const espectador = compra.espectadores[i]
+
+        if (compra.sessao === 'noite' && espectador.idade < 16) {
+            return {
+                valorTotal: 0,
+                quantidadeIngressos: compra.espectadores.length,
+                ehValida: false
+            }
+        }
+
+        if (espectador.idade < filmeEncontrado.classificacao) {
+            return {
+                valorTotal: 0,
+                quantidadeIngressos: compra.espectadores.length,
+                ehValida: false
+            }
+        }
+    }
+
+    let valorTotal = 0
+
+    for (let i = 0; i < compra.espectadores.length; i++) {
+        const espectador = compra.espectadores[i]
+        let valorIngresso = 40
+
+        if (compra.diaSemana === 2) {
+            valorIngresso = valorIngresso * 0.70
+        }
+
+        if (espectador.ehEstudante === true || espectador.idade >= 60) {
+            valorIngresso = valorIngresso * 0.50
+        }
+
+        if (filmeEncontrado.eh3D === true) {
+            valorIngresso = valorIngresso + 10
+        }
+
+        valorTotal = valorTotal + valorIngresso
+    }
 
     return {
-        valorTotal: 0,
-        quantidadeIngressos: 0,
-        ehValida: false
+        valorTotal: valorTotal,
+        quantidadeIngressos: compra.espectadores.length,
+        ehValida: true
     }
 }
 

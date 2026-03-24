@@ -31,7 +31,7 @@ interface ICheckin {
 
 interface IRegistroCheckin {
     alunoId: number
-    data: string  // formato YYYY-MM-DD
+    data: string
 }
 
 interface IResultadoPlano {
@@ -56,8 +56,8 @@ const alunos: IAluno[] = [
     { id: 1, nome: 'Carlos Silva', plano: 'mensal', dataInicio: new Date('2026-03-01'), personal: false, ativo: true, vencimento: new Date('2026-04-01') },
     { id: 2, nome: 'Ana Souza', plano: 'trimestral', dataInicio: new Date('2026-01-15'), personal: true, ativo: true, vencimento: new Date('2026-04-15') },
     { id: 3, nome: 'Pedro Lima', plano: 'anual', dataInicio: new Date('2025-06-01'), personal: false, ativo: true, vencimento: new Date('2026-06-01') },
-    { id: 4, nome: 'Julia Santos', plano: 'mensal', dataInicio: new Date('2026-02-01'), personal: false, ativo: true, vencimento: new Date('2026-03-01') }, // vencido
-    { id: 5, nome: 'Roberto Dias', plano: 'trimestral', dataInicio: new Date('2026-01-01'), personal: true, ativo: false, vencimento: new Date('2026-04-01') }, // inativo
+    { id: 4, nome: 'Julia Santos', plano: 'mensal', dataInicio: new Date('2026-02-01'), personal: false, ativo: true, vencimento: new Date('2026-03-01') },
+    { id: 5, nome: 'Roberto Dias', plano: 'trimestral', dataInicio: new Date('2026-01-01'), personal: true, ativo: false, vencimento: new Date('2026-04-01') },
 ]
 
 const checkIns: IRegistroCheckin[] = []
@@ -65,53 +65,166 @@ const checkIns: IRegistroCheckin[] = []
 // ==================== FUNÇÕES A IMPLEMENTAR ====================
 
 function calcularPlano(plano: string, personal: boolean): IResultadoPlano {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Verificar se o plano é válido ('mensal', 'trimestral' ou 'anual')
-    // 2. Obter o valor base do plano
-    // 3. Se personal === true, adicionar R$ 50,00/mês
-    // 4. Calcular valor mensal e valor total
-    //    - mensal: 1 mês | trimestral: 3 meses | anual: 12 meses
+    let valorBase = 0
+    let quantidadeMeses = 0
+
+    if (plano === 'mensal') {
+        valorBase = 99.90
+        quantidadeMeses = 1
+    } else if (plano === 'trimestral') {
+        valorBase = 249.90
+        quantidadeMeses = 3
+    } else if (plano === 'anual') {
+        valorBase = 899.90
+        quantidadeMeses = 12
+    } else {
+        return {
+            valorMensal: 0,
+            valorTotal: 0,
+            ehValido: false
+        }
+    }
+
+    let valorMensal = valorBase / quantidadeMeses
+
+    if (personal === true) {
+        valorMensal = valorMensal + 50
+    }
+
+    const valorTotal = valorMensal * quantidadeMeses
 
     return {
-        valorMensal: 0,
-        valorTotal: 0,
-        ehValido: false
+        valorMensal: Number(valorMensal.toFixed(2)),
+        valorTotal: Number(valorTotal.toFixed(2)),
+        ehValido: true
     }
 }
 
 function realizarCheckin(checkin: ICheckin): IResultadoCheckin {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Buscar o aluno pelo alunoId
-    // 2. Verificar se o aluno está ativo
-    // 3. Verificar se a mensalidade não está vencida (vencimento >= data atual)
-    // 4. Verificar se o horário está entre 6h e 23h
-    // 5. Verificar se já existe check-in do aluno no mesmo dia
-    // 6. Se tudo ok, registrar o check-in no array checkIns
+    let alunoEncontrado: IAluno | undefined = undefined
+
+    for (let i = 0; i < alunos.length; i++) {
+        if (alunos[i].id === checkin.alunoId) {
+            alunoEncontrado = alunos[i]
+        }
+    }
+
+    if (alunoEncontrado === undefined) {
+        return {
+            permitido: false,
+            mensagem: 'Aluno não encontrado'
+        }
+    }
+
+    if (alunoEncontrado.ativo === false) {
+        return {
+            permitido: false,
+            mensagem: 'Aluno inativo'
+        }
+    }
+
+    if (alunoEncontrado.vencimento < checkin.horario) {
+        return {
+            permitido: false,
+            mensagem: 'Mensalidade vencida'
+        }
+    }
+
+    const hora = checkin.horario.getHours()
+
+    if (hora < 6 || hora > 23) {
+        return {
+            permitido: false,
+            mensagem: 'Fora do horário'
+        }
+    }
+
+    const ano = checkin.horario.getFullYear()
+    const mes = String(checkin.horario.getMonth() + 1).padStart(2, '0')
+    const dia = String(checkin.horario.getDate()).padStart(2, '0')
+    const dataFormatada = ano + '-' + mes + '-' + dia
+
+    for (let i = 0; i < checkIns.length; i++) {
+        if (checkIns[i].alunoId === checkin.alunoId && checkIns[i].data === dataFormatada) {
+            return {
+                permitido: false,
+                mensagem: 'Check-in duplicado'
+            }
+        }
+    }
+
+    checkIns.push({
+        alunoId: checkin.alunoId,
+        data: dataFormatada
+    })
 
     return {
-        permitido: false,
-        mensagem: ''
+        permitido: true,
+        mensagem: 'Check-in realizado'
     }
 }
 
 function cancelarPlano(alunoId: number): IResultadoCancelamento {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Buscar o aluno pelo alunoId
-    // 2. Verificar se o aluno existe e está ativo
-    // 3. Calcular os meses restantes do contrato (do hoje até o vencimento)
-    // 4. Calcular o valor restante (meses restantes × valor mensal do plano)
-    // 5. Multa = 20% do valor restante
-    // 6. Retornar a multa
+    let alunoEncontrado: IAluno | undefined = undefined
+
+    for (let i = 0; i < alunos.length; i++) {
+        if (alunos[i].id === alunoId) {
+            alunoEncontrado = alunos[i]
+        }
+    }
+
+    if (alunoEncontrado === undefined) {
+        return {
+            multa: 0,
+            ehValido: false
+        }
+    }
+
+    if (alunoEncontrado.ativo === false) {
+        return {
+            multa: 0,
+            ehValido: false
+        }
+    }
+
+    const hoje = new Date('2026-03-20T00:00:00')
+    const vencimento = alunoEncontrado.vencimento
+
+    if (vencimento <= hoje) {
+        return {
+            multa: 0,
+            ehValido: false
+        }
+    }
+
+    let valorMensal = 0
+
+    if (alunoEncontrado.plano === 'mensal') {
+        valorMensal = 99.90
+    } else if (alunoEncontrado.plano === 'trimestral') {
+        valorMensal = 249.90 / 3
+    } else if (alunoEncontrado.plano === 'anual') {
+        valorMensal = 899.90 / 12
+    }
+
+    if (alunoEncontrado.personal === true) {
+        valorMensal = valorMensal + 50
+    }
+
+    const diferencaEmMilissegundos = vencimento.getTime() - hoje.getTime()
+    const diferencaEmDias = diferencaEmMilissegundos / (1000 * 60 * 60 * 24)
+    let mesesRestantes = Math.ceil(diferencaEmDias / 30)
+
+    if (mesesRestantes < 1) {
+        mesesRestantes = 1
+    }
+
+    const valorRestante = valorMensal * mesesRestantes
+    const multa = valorRestante * 0.20
 
     return {
-        multa: 0,
-        ehValido: false
+        multa: Number(multa.toFixed(2)),
+        ehValido: true
     }
 }
 
@@ -162,7 +275,7 @@ validar({ descricao: 'realizarCheckin() - Check-in fora do horário (5h)', atual
 // Valor restante: 1 × 83.30 = R$ 83.30
 // Multa: 83.30 × 0.20 = R$ 16.66
 const teste6 = cancelarPlano(2)
-validar({ descricao: 'cancelarPlano() - Cancelamento com multa 20%', atual: teste6.ehValido, esperado: true })
+validar({ descricao: 'cancelarPlano() - Cancelamento com multa 20%', atual: teste6.multa, esperado: 26.66 })
 
 // Teste 7: Check-in de aluno inadimplente (vencimento expirado) — inválido
 // Aluno: Julia Santos (id: 4), vencimento: 2026-03-01 (vencido)

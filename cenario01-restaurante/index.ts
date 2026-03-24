@@ -54,24 +54,102 @@ const cardapio: IItemCardapio[] = [
 // ==================== FUNÇÃO A IMPLEMENTAR ====================
 
 function calcularPedido(pedido: IPedido): IResultadoPedido {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    // 
-    // Passos sugeridos:
-    // 1. Verificar se o pedido é válido (não vazio, dentro do limite de 20 itens, acima do mínimo)
-    // 2. Calcular o subtotal (somar quantidade × preço de cada item usando o cardápio)
-    // 3. Verificar se é combo (tem pelo menos 1 prato + 1 bebida + 1 sobremesa)
-    // 4. Calcular desconto de combo (15% do subtotal) se aplicável
-    // 5. Calcular gorjeta (10% do subtotal, antes de desconto) se solicitada
-    // 6. Calcular taxa de entrega (R$ 8,00 ou grátis se subtotal > R$ 100)
-    // 7. Calcular valor total: subtotal - desconto + gorjeta + taxaEntrega
+    let subtotal = 0
+    let desconto = 0
+    let taxaEntrega = 0
+    let valorGorjeta = 0
+    let valorTotal = 0
+    let quantidadeTotal = 0
+
+    let temPrato = false
+    let temBebida = false
+    let temSobremesa = false
+
+    if (pedido.itens.length === 0) {
+        return {
+            subtotal: 0,
+            desconto: 0,
+            taxaEntrega: 0,
+            gorjeta: 0,
+            valorTotal: 0,
+            ehValido: false
+        }
+    }
+
+    for (let i = 0; i < pedido.itens.length; i++) {
+        const itemPedido = pedido.itens[i]
+        quantidadeTotal = quantidadeTotal + itemPedido.quantidade
+
+        let itemEncontrado: IItemCardapio | undefined = undefined
+
+        for (let j = 0; j < cardapio.length; j++) {
+            if (cardapio[j].id === itemPedido.itemId) {
+                itemEncontrado = cardapio[j]
+            }
+        }
+
+        if (itemEncontrado !== undefined) {
+            subtotal = subtotal + (itemEncontrado.preco * itemPedido.quantidade)
+
+            if (itemEncontrado.categoria === 'prato') {
+                temPrato = true
+            }
+
+            if (itemEncontrado.categoria === 'bebida') {
+                temBebida = true
+            }
+
+            if (itemEncontrado.categoria === 'sobremesa') {
+                temSobremesa = true
+            }
+        }
+    }
+
+    if (quantidadeTotal > 20) {
+        return {
+            subtotal: subtotal,
+            desconto: 0,
+            taxaEntrega: 0,
+            gorjeta: 0,
+            valorTotal: 0,
+            ehValido: false
+        }
+    }
+
+    if (subtotal < 25) {
+        return {
+            subtotal: subtotal,
+            desconto: 0,
+            taxaEntrega: 0,
+            gorjeta: 0,
+            valorTotal: 0,
+            ehValido: false
+        }
+    }
+
+    if (temPrato && temBebida && temSobremesa) {
+        desconto = subtotal * 0.15
+    }
+
+    if (pedido.gorjeta === true) {
+        valorGorjeta = subtotal * 0.10
+    }
+
+    if (subtotal > 100) {
+        taxaEntrega = 0
+    } else {
+        taxaEntrega = 8
+    }
+
+    valorTotal = subtotal - desconto + valorGorjeta + taxaEntrega
 
     return {
-        subtotal: 0,
-        desconto: 0,
-        taxaEntrega: 0,
-        gorjeta: 0,
-        valorTotal: 0,
-        ehValido: false
+        subtotal: subtotal,
+        desconto: desconto,
+        taxaEntrega: taxaEntrega,
+        gorjeta: valorGorjeta,
+        valorTotal: valorTotal,
+        ehValido: true
     }
 }
 
@@ -166,7 +244,7 @@ const teste8 = calcularPedido({
     ],
     gorjeta: true
 })
-validar({ descricao: 'calcularPedido() - Pedido com gorjeta sem combo', atual: teste8.valorTotal, esperado: 99.30 })
+validar({ descricao: 'calcularPedido() - Pedido com gorjeta sem combo', atual: teste8.valorTotal, esperado: 99.3 })
 
 // Teste 9: Pedido com combo + frete grátis + gorjeta (cenário completo)
 // Itens: 2x Picanha (R$130) + 1x Cerveja (R$14) + 1x Sorvete (R$10) = R$154
@@ -182,7 +260,7 @@ const teste9 = calcularPedido({
     ],
     gorjeta: true
 })
-validar({ descricao: 'calcularPedido() - Combo + frete grátis + gorjeta', atual: teste9.valorTotal, esperado: 146.30 })
+validar({ descricao: 'calcularPedido() - Combo + frete grátis + gorjeta', atual: teste9.valorTotal, esperado: 146.3 })
 
 // Teste 10: Pedido só com bebidas (sem combo = sem desconto)
 // Itens: 2x Refrigerante (R$16) + 1x Suco Natural (R$12) = R$28
