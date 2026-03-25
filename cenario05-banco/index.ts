@@ -249,7 +249,7 @@ const contaAposTeste9 = contas.find(c => c.id === 1)!
 validar({ descricao: 'Saldo correto após múltiplas operações', atual: contaAposTeste9.saldo, esperado: 1000 })
 
 // Teste 10: Extrato registra movimentação corretamente
-// Após o teste 9, Fernanda deve ter 3 movimentações no extrato
+//Após o teste 9, Fernanda deve ter 3 movimentações no extrato
 resetarContas()
 depositar({ contaId: 1, valor: 100 })
 const contaTeste10 = contas.find(c => c.id === 1)!

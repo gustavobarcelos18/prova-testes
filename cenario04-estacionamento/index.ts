@@ -272,11 +272,11 @@ validar({ descricao: 'registrarSaida() - Perda de ticket multa R$80', atual: tes
 // Teste 9: Estadia de 3 horas exatas — R$ 20,00
 // Entrada: 10:00, Saída: 13:00 = 180 min
 // 1ª hora: R$ 10 + 2h adicionais × R$ 5 = R$ 10
-// Total: R$ 10 + R$ 10 = R$ 20
+//total: R$ 10 + R$ 10 = R$ 20
 tickets.push({ id: 106, placa: 'GHI-9012', entrada: new Date('2026-03-20T10:00:00'), saida: null })
 const teste9 = registrarSaida({ ticketId: 106, perdeuTicket: false })
 validar({ descricao: 'registrarSaida() - Estadia de 3h exatas', atual: teste9.valor, esperado: 20 })
 
-// Teste 10: Registro de entrada válido retorna ticket com dados corretos
+//Teste 10: Registro de entrada válido retorna ticket com dados corretos
 const teste10 = registrarEntrada({ placa: 'ABC-1234' })
 validar({ descricao: 'registrarEntrada() - Entrada válida retorna ticket', atual: teste10.ehValido, esperado: true })
