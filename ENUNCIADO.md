@@ -1,5 +1,7 @@
 # 📝 Prova Prática — Fundamentos de Testes
 
+## Equipe: Gustavo Rodrigues Barcelos e João Henrique de Souza Oliveira Reis!
+
 ## Objetivo
 
 Nesta prova prática, você deverá implementar a **lógica das funções** e criar **10 testes** para cada um dos 5 cenários propostos, utilizando o framework de testes que construímos em aula.
@@ -276,3 +278,6 @@ Se a implementação estiver correta, você verá:
 5. **Calcule na mão** — antes de colocar o valor esperado, faça a conta manualmente
 
 Boa prova! 🚀
+
+
+Equipe: Gustavo Rodrigues Barcelos e João Henrique de Souza Oliveira Reis!

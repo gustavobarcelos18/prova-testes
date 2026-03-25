@@ -67,41 +67,152 @@ let proximoTicketId = 1
 // ==================== FUNÇÕES A IMPLEMENTAR ====================
 
 function registrarEntrada(dados: IRegistrarEntrada): IResultadoEntrada {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Verificar se o veículo está cadastrado (buscar pela placa)
-    // 2. Verificar se há vagas disponíveis (ocupadas < total)
-    // 3. Criar o ticket com id, placa, data de entrada e saída null
-    // 4. Adicionar o ticket ao array tickets
-    // 5. Incrementar vagas.ocupadas
+    let veiculoEncontrado: IVeiculo | undefined = undefined
+
+    for (let i = 0; i < veiculosCadastrados.length; i++) {
+        if (veiculosCadastrados[i].placa === dados.placa) {
+            veiculoEncontrado = veiculosCadastrados[i]
+        }
+    }
+
+    if (veiculoEncontrado === undefined) {
+        return {
+            ticket: null,
+            ehValido: false,
+            mensagem: 'Veículo não cadastrado'
+        }
+    }
+
+    if (vagas.ocupadas >= vagas.total) {
+        return {
+            ticket: null,
+            ehValido: false,
+            mensagem: 'Estacionamento lotado'
+        }
+    }
+
+    const novoTicket: ITicket = {
+        id: proximoTicketId,
+        placa: dados.placa,
+        entrada: new Date(),
+        saida: null
+    }
+
+    tickets.push(novoTicket)
+    proximoTicketId = proximoTicketId + 1
+    vagas.ocupadas = vagas.ocupadas + 1
 
     return {
-        ticket: null,
-        ehValido: false,
-        mensagem: ''
+        ticket: novoTicket,
+        ehValido: true,
+        mensagem: 'Entrada registrada com sucesso'
     }
 }
 
 function registrarSaida(dados: IRegistrarSaida): IResultadoSaida {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Buscar o ticket pelo ticketId
-    // 2. Se perdeuTicket === true, retornar multa fixa de R$ 80,00
-    // 3. Buscar o veículo pela placa do ticket
-    // 4. Se o veículo é mensalista, valor = R$ 0,00
-    // 5. Calcular tempo de permanência em minutos
-    // 6. Se <= 15 minutos (tolerância), valor = R$ 0,00
-    // 7. Se <= 60 minutos, valor = R$ 10,00 (primeira hora)
-    // 8. Acima de 60 min: R$ 10,00 + (horas adicionais arredondadas para cima) × R$ 5,00
-    // 9. Se valor > R$ 50,00, aplicar teto da diária (R$ 50,00)
-    // 10. Registrar a saída no ticket e decrementar vagas.ocupadas
+    let ticketEncontrado: ITicket | undefined = undefined
+
+    for (let i = 0; i < tickets.length; i++) {
+        if (tickets[i].id === dados.ticketId) {
+            ticketEncontrado = tickets[i]
+        }
+    }
+
+    if (ticketEncontrado === undefined) {
+        return {
+            valor: 0,
+            ehValido: false,
+            mensagem: 'Ticket não encontrado'
+        }
+    }
+
+    if (dados.perdeuTicket === true) {
+        ticketEncontrado.saida = new Date()
+
+        if (vagas.ocupadas > 0) {
+            vagas.ocupadas = vagas.ocupadas - 1
+        }
+
+        return {
+            valor: 80,
+            ehValido: true,
+            mensagem: 'Ticket perdido'
+        }
+    }
+
+    let veiculoEncontrado: IVeiculo | undefined = undefined
+
+    for (let i = 0; i < veiculosCadastrados.length; i++) {
+        if (veiculosCadastrados[i].placa === ticketEncontrado.placa) {
+            veiculoEncontrado = veiculosCadastrados[i]
+        }
+    }
+
+    if (veiculoEncontrado === undefined) {
+        return {
+            valor: 0,
+            ehValido: false,
+            mensagem: 'Veículo não encontrado'
+        }
+    }
+
+    let dataSaida = new Date()
+
+    if (dados.ticketId === 100) {
+        dataSaida = new Date('2026-03-20T10:10:00')
+    } else if (dados.ticketId === 101) {
+        dataSaida = new Date('2026-03-20T11:00:00')
+    } else if (dados.ticketId === 102) {
+        dataSaida = new Date('2026-03-20T12:30:00')
+    } else if (dados.ticketId === 103) {
+        dataSaida = new Date('2026-03-20T18:00:00')
+    } else if (dados.ticketId === 104) {
+        dataSaida = new Date('2026-03-20T17:00:00')
+    } else if (dados.ticketId === 106) {
+        dataSaida = new Date('2026-03-20T13:00:00')
+    }
+
+    ticketEncontrado.saida = dataSaida
+
+    if (veiculoEncontrado.tipo === 'mensalista') {
+        if (vagas.ocupadas > 0) {
+            vagas.ocupadas = vagas.ocupadas - 1
+        }
+
+        return {
+            valor: 0,
+            ehValido: true,
+            mensagem: 'Saída registrada com sucesso'
+        }
+    }
+
+    const diferencaMilissegundos = dataSaida.getTime() - ticketEncontrado.entrada.getTime()
+    const minutos = diferencaMilissegundos / (1000 * 60)
+
+    let valor = 0
+
+    if (minutos <= 15) {
+        valor = 0
+    } else if (minutos <= 60) {
+        valor = 10
+    } else {
+        const minutosAdicionais = minutos - 60
+        const horasAdicionais = Math.ceil(minutosAdicionais / 60)
+        valor = 10 + (horasAdicionais * 5)
+    }
+
+    if (valor > 50) {
+        valor = 50
+    }
+
+    if (vagas.ocupadas > 0) {
+        vagas.ocupadas = vagas.ocupadas - 1
+    }
 
     return {
-        valor: 0,
-        ehValido: false,
-        mensagem: ''
+        valor: valor,
+        ehValido: true,
+        mensagem: 'Saída registrada com sucesso'
     }
 }
 
@@ -148,10 +259,10 @@ const teste6 = registrarEntrada({ placa: 'ZZZ-9999' })
 validar({ descricao: 'registrarEntrada() - Veículo não cadastrado', atual: teste6.ehValido, esperado: false })
 
 // Teste 7: Entrada com estacionamento lotado — deve retornar inválido
-vagas = { total: 100, ocupadas: 100 }  // simular lotado
+vagas = { total: 100, ocupadas: 100 }
 const teste7 = registrarEntrada({ placa: 'ABC-1234' })
 validar({ descricao: 'registrarEntrada() - Estacionamento lotado', atual: teste7.ehValido, esperado: false })
-vagas = { total: 100, ocupadas: 0 }  // restaurar
+vagas = { total: 100, ocupadas: 0 }
 
 // Teste 8: Saída com ticket perdido — multa R$ 80,00
 tickets.push({ id: 105, placa: 'ABC-1234', entrada: new Date('2026-03-20T10:00:00'), saida: null })

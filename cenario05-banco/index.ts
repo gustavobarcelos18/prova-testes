@@ -57,44 +57,123 @@ const contas: IConta[] = [
 // ==================== FUNÇÕES A IMPLEMENTAR ====================
 
 function depositar(dados: IDepositar): boolean {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Buscar a conta pelo contaId
-    // 2. Verificar se a conta existe e está ativa
-    // 3. Verificar se o valor é >= R$ 10,00
-    // 4. Adicionar o valor ao saldo da conta
-    // 5. Registrar a movimentação no extrato
+    let contaEncontrada: IConta | undefined = undefined
 
-    return false
+    for (let i = 0; i < contas.length; i++) {
+        if (contas[i].id === dados.contaId) {
+            contaEncontrada = contas[i]
+        }
+    }
+
+    if (contaEncontrada === undefined) {
+        return false
+    }
+
+    if (contaEncontrada.ativa === false) {
+        return false
+    }
+
+    if (dados.valor < 10) {
+        return false
+    }
+
+    contaEncontrada.saldo = Number((contaEncontrada.saldo + dados.valor).toFixed(2))
+
+    contaEncontrada.extrato.push({
+        tipo: 'deposito',
+        valor: dados.valor,
+        data: new Date()
+    })
+
+    return true
 }
 
 function sacar(dados: ISacar): boolean {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Buscar a conta pelo contaId
-    // 2. Verificar se a conta existe e está ativa
-    // 3. Verificar se o valor do saque <= saldo
-    // 4. Subtrair o valor do saldo
-    // 5. Registrar a movimentação no extrato
+    let contaEncontrada: IConta | undefined = undefined
 
-    return false
+    for (let i = 0; i < contas.length; i++) {
+        if (contas[i].id === dados.contaId) {
+            contaEncontrada = contas[i]
+        }
+    }
+
+    if (contaEncontrada === undefined) {
+        return false
+    }
+
+    if (contaEncontrada.ativa === false) {
+        return false
+    }
+
+    if (dados.valor > contaEncontrada.saldo) {
+        return false
+    }
+
+    contaEncontrada.saldo = Number((contaEncontrada.saldo - dados.valor).toFixed(2))
+
+    contaEncontrada.extrato.push({
+        tipo: 'saque',
+        valor: dados.valor,
+        data: new Date()
+    })
+
+    return true
 }
 
 function transferir(dados: ITransferir): boolean {
-    // TODO: Implementar a lógica seguindo as regras de negócio
-    //
-    // Passos sugeridos:
-    // 1. Buscar conta de origem e destino
-    // 2. Verificar se ambas existem e estão ativas
-    // 3. Verificar se o valor <= R$ 5.000,00
-    // 4. Se os bancos forem diferentes, descontar taxa de R$ 2,50 do remetente
-    // 5. Verificar se o saldo da origem cobre o valor + taxa (se aplicável)
-    // 6. Descontar valor + taxa da origem e adicionar valor ao destino
-    // 7. Registrar movimentação no extrato de ambas as contas
+    let contaOrigem: IConta | undefined = undefined
+    let contaDestino: IConta | undefined = undefined
 
-    return false
+    for (let i = 0; i < contas.length; i++) {
+        if (contas[i].id === dados.contaOrigemId) {
+            contaOrigem = contas[i]
+        }
+
+        if (contas[i].id === dados.contaDestinoId) {
+            contaDestino = contas[i]
+        }
+    }
+
+    if (contaOrigem === undefined || contaDestino === undefined) {
+        return false
+    }
+
+    if (contaOrigem.ativa === false || contaDestino.ativa === false) {
+        return false
+    }
+
+    if (dados.valor > 5000) {
+        return false
+    }
+
+    let taxa = 0
+
+    if (contaOrigem.banco !== contaDestino.banco) {
+        taxa = 2.50
+    }
+
+    const valorTotalDebito = dados.valor + taxa
+
+    if (valorTotalDebito > contaOrigem.saldo) {
+        return false
+    }
+
+    contaOrigem.saldo = Number((contaOrigem.saldo - valorTotalDebito).toFixed(2))
+    contaDestino.saldo = Number((contaDestino.saldo + dados.valor).toFixed(2))
+
+    contaOrigem.extrato.push({
+        tipo: 'transferencia_enviada',
+        valor: dados.valor,
+        data: new Date()
+    })
+
+    contaDestino.extrato.push({
+        tipo: 'transferencia_recebida',
+        valor: dados.valor,
+        data: new Date()
+    })
+
+    return true
 }
 
 // ==================== FUNÇÕES AUXILIARES ====================
